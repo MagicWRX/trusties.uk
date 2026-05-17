@@ -1,12 +1,12 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { Coins, Check, Sparkles, Eye, Zap, Calculator, TrendingDown, DollarSign } from 'lucide-react';
+import { Coins, Check, Sparkles, Eye, Zap, Calculator, TrendingDown, DollarSign, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent } from '@/components/ui/Card';
 import { useAuth } from '@/components/auth/AuthProvider';
 import Link from 'next/link';
-import { calculateTiers, calculatemessagesForAmount, profitMargin } from '@/lib/tokens';
+import { calculateTiers, calculateTokensForAmount, profitMargin, providerCost } from '@/lib/tokens';
 
 const tiers = calculateTiers();
 
@@ -35,29 +35,33 @@ function TokenTierCard({ tier, index }: { tier: (typeof tiers)[0]; index: number
   }, [tier.usd]);
 
   const margin = profitMargin(tier.usd, tier.messages);
-  const isPopular = tier.label === 'Popular';
+  const cost = providerCost(tier.messages);
+  const savingsVsStarter = index === 0
+    ? '-'
+    : `$${(tier.usd - (tiers[0].costPerMessage * tier.messages)).toFixed(2)}`;
+  const isPopular = ['Popular', 'Pro'].includes(tier.label);
 
   return (
     <Card key={tier.label} className={`relative flex flex-col transition-all hover:shadow-lg ${isPopular ? 'border-blue-500 ring-2 ring-blue-200' : 'border-gray-200'}`}>
       {isPopular && (
         <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-600 text-white px-4 py-1 rounded-full text-sm font-medium">
-          Best Value
+          {tier.label === 'Popular' ? 'Best Value' : 'Most Tokens'}
         </div>
       )}
       <CardContent className="p-5 flex flex-col flex-1">
-        {/* Price & messages */}
+        {/* Price & Messages */}
         <div className="mb-3">
           <div className="flex items-baseline gap-1 mb-1">
             <span className="text-3xl font-bold">${tier.usd}</span>
           </div>
           <div className="text-2xl font-bold text-blue-600">{tier.messages.toLocaleString()}</div>
-          <div className="text-xs text-gray-500">tokens</div>
+          <div className="text-xs text-gray-500">messages (chats)</div>
         </div>
 
-        {/* Cost per token */}
-        <div className="flex items-center gap-1 text-sm text-gray-600 mb-3">
+        {/* Cost per message */}
+        <div className="flex items-center gap-1 text-sm text-gray-600 mb-2">
           <TrendingDown className="w-3.5 h-3.5 text-green-500" />
-          <span>${tier.costPerMessage.toFixed(4)} / token</span>
+          <span>${tier.costPerMessage.toFixed(4)} / msg</span>
           {index > 0 && (
             <span className="text-green-600 text-xs font-medium ml-1">
               {Math.round((1 - tier.costPerMessage / tiers[0].costPerMessage) * 100)}% off
@@ -65,11 +69,11 @@ function TokenTierCard({ tier, index }: { tier: (typeof tiers)[0]; index: number
           )}
         </div>
 
-        {/* Token badge */}
+        {/* Badges */}
         <div className="flex flex-wrap gap-1.5 mb-4">
           <span className="text-xs bg-blue-50 text-blue-700 px-2.5 py-0.5 rounded-full font-medium">{tier.label}</span>
           <span className="text-xs bg-green-50 text-green-700 px-2.5 py-0.5 rounded-full">
-            {isPopular ? 'Save 50%' : `${margin}% margin`}
+            Save {savingsVsStarter}
           </span>
         </div>
 
@@ -97,7 +101,7 @@ export default function PricingPage() {
   const [customBuying, setCustomBuying] = useState(false);
   const { user } = useAuth();
 
-  const customMessages = calculatemessagesForAmount(customAmount);
+  const customMessages = calculateTokensForAmount(customAmount);
   const customRate = customAmount > 0 ? (customAmount / customMessages).toFixed(4) : '0';
 
   const handleCustomBuy = useCallback(async () => {
@@ -129,12 +133,12 @@ export default function PricingPage() {
       <div className="max-w-6xl mx-auto px-4">
         <div className="text-center mb-12">
           <div className="inline-flex items-center gap-2 bg-green-100 text-green-700 px-4 py-1.5 rounded-full text-sm font-medium mb-4">
-            <Coins className="w-4 h-4" /> Pay Per Token
+            <Coins className="w-4 h-4" /> Pay Per Message
           </div>
-          <h1 className="text-4xl font-bold mb-4">Token Pricing</h1>
+          <h1 className="text-4xl font-bold mb-4">Message Pricing</h1>
           <p className="text-gray-600 text-lg max-w-2xl mx-auto">
-            Buy tokens once. Use them as you go. No subscription, no commitment.
-            The more you buy, the less each token costs.
+            Buy messages in bulk. Use them with the AI assistant whenever you need.
+            No subscription, no commitment. The more you buy, the less each message costs.
           </p>
         </div>
 
@@ -154,7 +158,7 @@ export default function PricingPage() {
             </div>
 
             <p className="text-sm text-gray-600 mb-6">
-              Enter any amount from $1 to $1,000. messages are calculated at the best available rate.
+              Enter any amount from $1 to $1,000. Messages are calculated at the best available rate.
             </p>
 
             {/* Amount Input */}
@@ -200,14 +204,14 @@ export default function PricingPage() {
                   <div className="text-2xl font-bold text-blue-700">
                     {customMessages.toLocaleString()}
                   </div>
-                  <div className="text-xs text-gray-500">tokens</div>
+                  <div className="text-xs text-gray-500">messages (chats)</div>
                 </div>
                 <div>
                   <div className="text-xs text-gray-500 mb-1">Rate</div>
                   <div className="text-2xl font-bold text-green-700">
                     ${customRate}
                   </div>
-                  <div className="text-xs text-gray-500">per token</div>
+                  <div className="text-xs text-gray-500">per message</div>
                 </div>
               </div>
 
@@ -232,7 +236,7 @@ export default function PricingPage() {
               >
                 {customBuying
                   ? 'Processing...'
-                  : `Buy $${customAmount} — ${customMessages.toLocaleString()} messages`}
+                  : `Buy $${customAmount} — ${customMessages.toLocaleString()} Messages`}
               </Button>
             ) : (
               <Link href="/signup">
@@ -244,15 +248,15 @@ export default function PricingPage() {
           </CardContent>
         </Card>
 
-        {/* What messages Unlock */}
+        {/* What Messages Unlock */}
         <div className="mt-16 max-w-lg mx-auto">
-          <h2 className="text-xl font-bold text-center mb-6">What messages Unlock</h2>
+          <h2 className="text-xl font-bold text-center mb-6">What Messages Unlock</h2>
           <div className="space-y-3">
             {[
-              { icon: Eye, item: 'Document vault access', cost: '3 tokens' },
-              { icon: Zap, item: 'AI chat session', cost: '2 tokens' },
-              { icon: Sparkles, item: 'Priority response', cost: '5 tokens' },
-              { icon: Coins, item: 'Monthly summary report', cost: '10 tokens' },
+              { icon: MessageSquare, item: 'AI assistant chat session', cost: '1 message per question' },
+              { icon: Eye, item: 'Document vault access', cost: '3 messages' },
+              { icon: Zap, item: 'Priority response', cost: '5 messages' },
+              { icon: Sparkles, item: 'Monthly summary report', cost: '10 messages' },
             ].map((t, i) => (
               <div key={i} className="flex items-center justify-between bg-white p-3 rounded-lg border border-gray-200">
                 <div className="flex items-center gap-2">
@@ -262,73 +266,6 @@ export default function PricingPage() {
                 <span className="text-sm font-semibold text-blue-600">{t.cost}</span>
               </div>
             ))}
-          </div>
-        </div>
-
-        {/* 🔷 TRANSPARENCY SECTION */}
-        <div className="mt-20 max-w-3xl mx-auto">
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center gap-2 bg-amber-100 text-amber-700 px-4 py-1.5 rounded-full text-sm font-medium mb-4">
-              <Eye className="w-4 h-4" /> Radical Transparency
-            </div>
-            <h2 className="text-2xl font-bold">Where Your Money Goes</h2>
-            <p className="text-gray-600 mt-2">
-              We believe in complete transparency. Here&apos;s exactly how every dollar is spent.
-            </p>
-          </div>
-
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-            {/* Table Header */}
-            <div className="grid grid-cols-5 gap-4 bg-gray-50 px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-              <div>Your Purchase</div>
-              <div>messages</div>
-              <div>Our Cost*</div>
-              <div>Our Margin</div>
-              <div>You Save**</div>
-            </div>
-
-            {/* Table Rows */}
-            {tiers.map((tier, i) => {
-              const margin = profitMargin(tier.usd, tier.messages);
-              const cost = providerCost(tier.messages);
-              const savingsVsStarter = i === 0
-                ? '-'
-                : `$${(tier.usd - (tiers[0].costPerMessage * tier.messages)).toFixed(2)}`;
-              return (
-                <div
-                  key={tier.usd}
-                  className={`grid grid-cols-5 gap-4 px-6 py-3 text-sm ${i % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'} ${tier.label === 'Popular' ? 'ring-2 ring-blue-200 bg-blue-50/30' : ''}`}
-                >
-                  <div className="font-medium text-gray-900">${tier.usd}</div>
-                  <div className="text-gray-700">{tier.messages.toLocaleString()}</div>
-                  <div className="text-gray-500">${cost.toFixed(4)}</div>
-                  <div className="font-medium">
-                    <span className={margin >= 95 ? 'text-green-600' : margin >= 90 ? 'text-amber-600' : 'text-blue-600'}>
-                      {margin}%
-                    </span>
-                  </div>
-                  <div className={`text-gray-500 ${savingsVsStarter !== '-' ? 'text-green-600 font-medium' : ''}`}>
-                    {savingsVsStarter}
-                  </div>
-                </div>
-              );
-            })}
-
-            {/* Footer */}
-            <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 space-y-2 text-xs text-gray-500">
-              <p>
-                * <strong>Our Cost</strong> is what we pay the AI provider (DeepSeek) to generate responses.
-                We run on ~{profitMargin(10, 1000)}% margin at the $10 tier and adjust bulk discounts so
-                higher purchases get better rates while keeping the service sustainable.
-              </p>
-              <p>
-                ** <strong>You Save</strong> shows how much less you pay compared to buying $1 Starter packs.
-                Buying in bulk means lower overhead for us, and we pass those savings to you.
-              </p>
-              <p className="text-gray-400 italic">
-                No hidden fees. No subscriptions. What you buy is yours to use.
-              </p>
-            </div>
           </div>
         </div>
       </div>

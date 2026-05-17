@@ -1,0 +1,84 @@
+{
+  "name": "@magicwrxtools/theme-manager",
+  "version": "0.7.1",
+  "regid": "GS-2026-16.0.10-19.0.0-22LTS",
+  "description": "UI theme management tool for Hub and tool demos — DB-driven top-down theme contracts",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./server": {
+      "types": "./dist/server/fetchThemeContract.d.ts",
+      "default": "./dist/server/fetchThemeContract.js"
+    },
+    "./server/layout": {
+      "types": "./dist/server/fetchLayoutContract.d.ts",
+      "default": "./dist/server/fetchLayoutContract.js"
+    },
+    "./server/blocks": {
+      "types": "./dist/server/fetchBlocks.d.ts",
+      "default": "./dist/server/fetchBlocks.js"
+    },
+    "./types": {
+      "types": "./dist/types/index.d.ts",
+      "default": "./dist/types/index.js"
+    }
+  },
+  "typesVersions": {
+    "*": {
+      "server": [
+        "dist/server/fetchThemeContract.d.ts"
+      ],
+      "server/layout": [
+        "dist/server/fetchLayoutContract.d.ts"
+      ],
+      "server/blocks": [
+        "dist/server/fetchBlocks.d.ts"
+      ],
+      "types": [
+        "dist/types/index.d.ts"
+      ]
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc -w",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "peerDependencies": {
+    "@magicwrxtools/block-system": "^0.1.0",
+    "next": "^14.0.0 || ^15.0.0 || ^16.0.0",
+    "react": "^18.0.0 || ^19.0.0",
+    "react-dom": "^18.0.0 || ^19.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/react": "^19.0.0",
+    "next": "16.0.10",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MagicWRXTools/shared.git",
+    "directory": "theme-manager"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
+  "keywords": [
+    "theme",
+    "ui",
+    "hub",
+    "design"
+  ],
+  "author": "Amazing Business",
+  "license": "UNLICENSED"
+}

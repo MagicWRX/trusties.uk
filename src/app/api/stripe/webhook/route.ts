@@ -59,7 +59,7 @@ export async function POST(req: NextRequest) {
         const supabase = createClient();
 
         // Upsert the user_tokens row
-        const { error: upsertError } = await supabase.rpc('credit_tokens', {
+        const { error: upsertError } = await (supabase.rpc as any)('credit_tokens', {
           p_user_id: userId,
           p_tokens: tokens,
         });
@@ -69,14 +69,14 @@ export async function POST(req: NextRequest) {
           console.error('Webhook: rpc credit_tokens failed, trying direct upsert', upsertError);
 
           // First check if row exists
-          const { data: existing } = await supabase
+          const { data: existing } = await (supabase as any)
             .from('user_tokens')
             .select('id, balance')
             .eq('id', userId)
             .maybeSingle();
 
           if (existing) {
-            await supabase
+            await (supabase as any)
               .from('user_tokens')
               .update({
                 balance: (existing.balance ?? 0) + tokens,
@@ -85,7 +85,7 @@ export async function POST(req: NextRequest) {
               })
               .eq('id', userId);
           } else {
-            await supabase
+            await (supabase as any)
               .from('user_tokens')
               .insert({
                 id: userId,
@@ -99,7 +99,7 @@ export async function POST(req: NextRequest) {
         }
 
         // Record the purchase in token_purchases
-        const { error: insertError } = await supabase
+        const { error: insertError } = await (supabase as any)
           .from('token_purchases')
           .insert({
             user_id: userId,

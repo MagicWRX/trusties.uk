@@ -8,7 +8,8 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent } from '@/components/ui/Card';
 
-const TOKEN_COST_PER_MESSAGE = 2;
+/** Cost in user-facing message units (matches pricing page tiers) */
+const MSG_COST = 1;
 
 interface Message {
   id: string;
@@ -25,7 +26,7 @@ export default function ChatPage() {
     {
       id: 'welcome',
       role: 'assistant',
-      content: 'Hello! I\'m your Trusties AI assistant. I can help you with:\n\n• Understanding trusts and wills\n• Estate planning questions\n• Beneficiary management\n• Document preparation\n\nEach message costs **2 tokens**. What would you like to know?',
+      content: 'Hello! I\'m your Trusties AI assistant. I can help you with:\n\n• Understanding trusts and wills\n• Estate planning questions\n• Beneficiary management\n• Document preparation\n\nEach question costs **1 message** from your balance. What would you like to know?',
       timestamp: new Date().toISOString(),
     },
   ]);
@@ -75,7 +76,7 @@ export default function ChatPage() {
     if (!trimmed || sending) return;
 
     // Check if user has enough tokens
-    if (tokenBalance !== null && tokenBalance < TOKEN_COST_PER_MESSAGE) {
+    if (tokenBalance !== null && tokenBalance < MSG_COST) {
       return; // Paywall will show
     }
 
@@ -93,7 +94,7 @@ export default function ChatPage() {
 
     // Optimistically deduct tokens
     if (tokenBalance !== null) {
-      setTokenBalance(prev => (prev !== null ? prev - TOKEN_COST_PER_MESSAGE : prev));
+      setTokenBalance(prev => (prev !== null ? prev - MSG_COST : prev));
     }
 
     try {
@@ -113,7 +114,7 @@ export default function ChatPage() {
 
       // If the API failed and didn't charge, restore tokens
       if (data.error || !res.ok) {
-        setTokenBalance(prev => (prev !== null ? prev + TOKEN_COST_PER_MESSAGE : prev));
+        setTokenBalance(prev => (prev !== null ? prev + MSG_COST : prev));
       }
     } catch {
       setMessages(prev => [...prev, {
@@ -123,7 +124,7 @@ export default function ChatPage() {
         timestamp: new Date().toISOString(),
       }]);
       // Refund
-      setTokenBalance(prev => (prev !== null ? prev + TOKEN_COST_PER_MESSAGE : prev));
+      setTokenBalance(prev => (prev !== null ? prev + MSG_COST : prev));
     }
     setSending(false);
 
@@ -145,7 +146,7 @@ export default function ChatPage() {
     );
   }
 
-  const outOfTokens = tokenBalance !== null && tokenBalance < TOKEN_COST_PER_MESSAGE;
+  const outOfTokens = tokenBalance !== null && tokenBalance < MSG_COST;
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -227,7 +228,7 @@ export default function ChatPage() {
                 <div className="flex-1">
                   <h3 className="font-semibold text-amber-800 text-sm">Out of Tokens</h3>
                   <p className="text-xs text-amber-700 mt-1">
-                    Each message costs {TOKEN_COST_PER_MESSAGE} tokens. Purchase more to continue chatting.
+                    Each message costs {MSG_COST} tokens. Purchase more to continue chatting.
                   </p>
                   <div className="mt-3 flex gap-2">
                     <Link href="/pricing">
@@ -281,7 +282,7 @@ export default function ChatPage() {
             </button>
           </div>
           <p className="text-xs text-muted-foreground mt-2 text-center">
-            {TOKEN_COST_PER_MESSAGE} tokens per message · AI responses are for informational purposes only
+            {MSG_COST} tokens per message · AI responses are for informational purposes only
           </p>
         </div>
       </div>

@@ -12,7 +12,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@magicwrxtools/auth-tool';
 
-const TOKEN_COST = 2;
+const MSG_COST = 1;
 const OPENCLAW_URL = process.env.OPENCLAW_GATEWAY_URL ?? 'https://ai.magicwrx.com';
 const OPENCLAW_TOKEN = process.env.OPENCLAW_GATEWAY_TOKEN ?? '';
 
@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
   // 3. Check and deduct tokens
   const { data: tokensData, error: balanceError } = await supabase
     .from('user_tokens')
-    .select('balance')
+    .select('*')
     .eq('id', userId)
     .maybeSingle();
 
@@ -53,32 +53,34 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Failed to verify token balance' }, { status: 500 });
   }
 
-  const currentBalance = tokensData?.balance ?? 0;
-  if (currentBalance < TOKEN_COST) {
+  const tokensRow = tokensData as { balance?: number; total_purchased?: number; total_spent?: number } | null;
+  const currentBalance = tokensRow?.balance ?? 0;
+  if (currentBalance < MSG_COST) {
     return NextResponse.json({
       error: 'Insufficient tokens',
-      tokensRequired: TOKEN_COST,
+      tokensRequired: MSG_COST,
       tokensAvailable: currentBalance,
     }, { status: 402 }); // 402 Payment Required
   }
 
-  // Deduct tokens
-  const { error: deductError } = await supabase
-    .from('user_tokens')
-    .update({
-      balance: currentBalance - TOKEN_COST,
-      total_spent: supabase.rpc ? undefined : (tokensData as any)?.total_spent ? (tokensData as any).total_spent + TOKEN_COST : TOKEN_COST,
-      updated_at: new Date().toISOString(),
-    })
+  // Deduct tokens (use explicit type to work around Supabase schema inference)
+  const deductPayload: Record<string, unknown> = {
+    balance: currentBalance - MSG_COST,
+    total_spent: (tokensRow?.total_spent ?? 0) + MSG_COST,
+    updated_at: new Date().toISOString(),
+  };
+  const { error: deductError } = await (supabase
+    .from('user_tokens') as any)
+    .update(deductPayload)
     .eq('id', userId);
 
   if (deductError) {
     console.error('Token deduction error:', deductError);
     // Try RPC fallback
     try {
-      await supabase.rpc('spend_tokens', {
+      await (supabase.rpc as any)('spend_tokens', {
         p_user_id: userId,
-        p_tokens: TOKEN_COST,
+        p_tokens: MSG_COST,
       });
     } catch (rpcErr) {
       console.error('RPC spend_tokens also failed:', rpcErr);
@@ -91,7 +93,7 @@ export async function POST(req: NextRequest) {
     // No AI configured — return a helpful response
     return NextResponse.json({
       reply: `I'm a Trusties AI assistant. I can help with:\n\n• Understanding trusts and estate planning\n• Document preparation guidance\n• Beneficiary management\n\n_(Full AI backend coming soon)_`,
-      tokensUsed: TOKEN_COST,
+      tokensUsed: MSG_COST,
     });
   }
 
@@ -113,10 +115,10 @@ export async function POST(req: NextRequest) {
       const text = await res.text();
       // Refund tokens on failure
       try {
-        await supabase
-          .from('user_tokens')
+        await (supabase
+          .from('user_tokens') as any)
           .update({
-            balance: currentBalance, // restore
+            balance: currentBalance as number,
             updated_at: new Date().toISOString(),
           })
           .eq('id', userId);
@@ -125,21 +127,21 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({
         error: `AI service error: ${res.status}`,
         detail: text,
-        tokensRefunded: TOKEN_COST,
+        tokensRefunded: MSG_COST,
       }, { status: 502 });
     }
 
     const data = await res.json();
     return NextResponse.json({
       reply: data.reply || data.message || data.response || 'I understand. Let me think about that...',
-      tokensUsed: TOKEN_COST,
-      tokensRemaining: currentBalance - TOKEN_COST,
+      tokensUsed: MSG_COST,
+      tokensRemaining: currentBalance - MSG_COST,
     });
   } catch (err) {
     // Refund tokens on network error
     try {
-      await supabase
-        .from('user_tokens')
+      await (supabase
+        .from('user_tokens') as any)
         .update({
           balance: currentBalance,
           updated_at: new Date().toISOString(),
@@ -149,7 +151,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       error: err instanceof Error ? err.message : 'AI service unavailable',
-      tokensRefunded: TOKEN_COST,
+      tokensRefunded: MSG_COST,
     }, { status: 502 });
   }
 }

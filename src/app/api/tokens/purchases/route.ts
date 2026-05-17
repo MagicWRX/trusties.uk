@@ -17,7 +17,7 @@ export async function GET() {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
 
-    const { data: purchases, error } = await supabase
+    const { data: purchases, error } = await (supabase as any)
       .from('token_purchases')
       .select('id, amount_usd, tokens, created_at, status')
       .eq('user_id', session.user.id)

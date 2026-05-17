@@ -20,7 +20,7 @@ export async function GET() {
     const userId = session.user.id;
 
     // Query actual token balance from Supabase user_credits or user_tokens table
-    const { data: tokensData, error: tokensError } = await supabase
+    const { data: tokensData, error: tokensError } = await (supabase as any)
       .from('user_tokens')
       .select('balance, total_purchased, total_spent')
       .eq('id', userId)
