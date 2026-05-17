@@ -1,7 +1,7 @@
 {
   "name": "@magicwrxtools/block-system",
-  "version": "0.2.0",
-  "description": "Universal block container system — the execution layer between LayoutContract regions and leaf content",
+  "version": "0.1.0",
+  "description": "Universal block container system \u2014 the execution layer between LayoutContract regions and leaf content",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
