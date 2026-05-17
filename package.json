@@ -7,13 +7,12 @@
     "dev": "next dev -p 3017",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "postinstall": "bash prepare.sh"
+    "lint": "next lint"
   },
   "dependencies": {
-    "@magicwrxtools/auth-tool": "^0.1.1",
-    "@magicwrxtools/stripe-tool": "^0.1.4",
-    "@magicwrxtools/theme-manager": "^0.7.1",
+    "@magicwrxtools/auth-tool": "file:./vendor/auth-tool",
+    "@magicwrxtools/stripe-tool": "file:./vendor/stripe-tool",
+    "@magicwrxtools/theme-manager": "file:./vendor/theme-manager",
     "@radix-ui/react-slot": "^1.2.4",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.93.2",
@@ -26,7 +25,8 @@
     "react-player": "^2.16.0",
     "stripe": "^22.1.1",
     "tailwind-merge": "^3.4.0",
-    "zod": "^4.3.6"
+    "zod": "^4.3.6",
+    "@magicwrxtools/block-system": "file:./vendor/block-system"
   },
   "devDependencies": {
     "@types/node": "^20",
